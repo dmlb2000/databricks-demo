@@ -98,3 +98,6 @@ ENV/
 # mypy
 .mypy_cache/
 
+data/
+cifar-10-python.tar.gz
+*.h5
