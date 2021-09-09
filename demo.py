@@ -17,8 +17,34 @@ file.extractall(join('/FileStore', 'data'))
 for root, dirs, files in os.walk(join('/FileStore', 'data', 'cifar-10-batches-py')):
     for filename in files:
         os.symlink(join('/FileStore', 'data', 'cifar-10-batches-py', filename), join('data', filename))
-
+print("Done!")
 
 # COMMAND ----------
 
+# MAGIC %matplotlib inline
+# MAGIC import numpy as np
+# MAGIC import matplotlib
+# MAGIC from matplotlib import pyplot as plt
+# MAGIC from keras.models import Sequential
+# MAGIC from keras.optimizer_v2.adam import Adam
+# MAGIC from keras.callbacks import ModelCheckpoint
+# MAGIC from keras.models import load_model
+# MAGIC from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten, Activation
 
+# COMMAND ----------
+
+from helper import get_class_names, get_train_data, get_test_data, plot_images, plot_model
+
+# COMMAND ----------
+
+matplotlib.style.use('ggplot')
+
+# COMMAND ----------
+
+class_names = get_class_names()
+print(class_names)
+
+# COMMAND ----------
+
+num_classes = len(class_names)
+print(num_classes)
