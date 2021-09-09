@@ -17,12 +17,15 @@ file.extractall(join('/tmp', 'data'))
 os.makedirs('data', exist_ok=True)
 for root, dirs, files in os.walk(join('/tmp', 'data', 'cifar-10-batches-py')):
     for filename in files:
-        os.symlink(join('/tmp', 'data', 'cifar-10-batches-py', filename), join('data', filename))
+        linkpath = join('data', filename)
+        if os.access(linkpath, os.R_OK):
+            os.remove(linkpath)
+        os.symlink(join('/tmp', 'data', 'cifar-10-batches-py', filename), linkpath)
 print("Done!")
 
 # COMMAND ----------
 
-# MAGIC %pip install keras tensorflow
+# MAGIC %pip install tensorflow
 
 # COMMAND ----------
 
@@ -34,11 +37,11 @@ print("Done!")
 # MAGIC import numpy as np
 # MAGIC import matplotlib
 # MAGIC from matplotlib import pyplot as plt
-# MAGIC from keras.models import Sequential
-# MAGIC from keras.optimizer_v2.adam import Adam
-# MAGIC from keras.callbacks import ModelCheckpoint
-# MAGIC from keras.models import load_model
-# MAGIC from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten, Activation
+# MAGIC from tensorflow.keras.models import Sequential
+# MAGIC from tensorflow.keras.optimizers import Adam
+# MAGIC from tensorflow.keras.callbacks import ModelCheckpoint
+# MAGIC from tensorflow.keras.models import load_model
+# MAGIC from tensorflow.keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten, Activation
 
 # COMMAND ----------
 
@@ -49,7 +52,7 @@ import pickle
 # For array manipulations
 import numpy as np
 # To make one-hot vectors
-from keras.utils import np_utils
+from tensorflow.keras.utils import to_categorical
 # To plot graphs and display images
 from matplotlib import pyplot as plt
 
@@ -136,7 +139,7 @@ def get_test_data():
     
     # Images, their labels and 
     # corresponding one-hot vectors in form of np arrays
-    return images, labels, np_utils.to_categorical(labels,num_classes)
+    return images, labels, to_categorical(labels,num_classes)
 
 
 
@@ -169,7 +172,7 @@ def get_train_data():
     
     # Images, their labels and 
     # corresponding one-hot vectors in form of np arrays
-    return images, labels, np_utils.to_categorical(labels,num_classes)
+    return images, labels, to_categorical(labels,num_classes)
         
 
 
@@ -235,12 +238,13 @@ def plot_model(model_details):
     fig, axs = plt.subplots(1,2,figsize=(15,5))
     
     # Summarize history for accuracy
-    axs[0].plot(range(1,len(model_details.history['acc'])+1),model_details.history['acc'])
-    axs[0].plot(range(1,len(model_details.history['val_acc'])+1),model_details.history['val_acc'])
+    #print(list(model_details.history.keys()))
+    axs[0].plot(range(1,len(model_details.history['accuracy'])+1),model_details.history['accuracy'])
+    axs[0].plot(range(1,len(model_details.history['val_accuracy'])+1),model_details.history['val_accuracy'])
     axs[0].set_title('Model Accuracy')
     axs[0].set_ylabel('Accuracy')
     axs[0].set_xlabel('Epoch')
-    axs[0].set_xticks(np.arange(1,len(model_details.history['acc'])+1),len(model_details.history['acc'])/10)
+    axs[0].set_xticks(np.arange(1,len(model_details.history['accuracy'])+1),len(model_details.history['accuracy'])/10)
     axs[0].legend(['train', 'val'], loc='best')
     
     # Summarize history for loss
@@ -391,3 +395,53 @@ model_details = model.fit(images_train, class_train,
                     validation_data= (images_test, class_test),
                     callbacks=[checkpoint],
                     verbose=1)
+
+# COMMAND ----------
+
+scores = model.evaluate(images_test, class_test, verbose=0)
+print("Accuracy: %.2f%%" % (scores[1]*100))
+
+# COMMAND ----------
+
+plot_model(model_details)
+
+# COMMAND ----------
+
+class_pred = model.predict(images_test, batch_size=32)
+print(class_pred[0])
+
+# COMMAND ----------
+
+labels_pred = np.argmax(class_pred,axis=1)
+print(labels_pred)
+
+# COMMAND ----------
+
+correct = (labels_pred == labels_test)
+print(correct)
+print("Number of correct predictions: %d" % sum(correct))
+
+# COMMAND ----------
+
+num_images = len(correct)
+print("Accuracy: %.2f%%" % ((sum(correct)*100)/num_images))
+
+# COMMAND ----------
+
+incorrect = (correct == False)
+
+# Images of the test-set that have been incorrectly classified.
+images_error = images_test[incorrect]
+
+# Get predicted classes for those images
+labels_error = labels_pred[incorrect]
+
+# Get true classes for those images
+labels_true = labels_test[incorrect]
+
+# COMMAND ----------
+
+plot_images(images=images_error[0:9],
+            labels_true=labels_true[0:9],
+            class_names=class_names,
+            labels_pred=labels_error[0:9])
