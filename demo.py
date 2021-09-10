@@ -1,35 +1,19 @@
 # Databricks notebook source
-import requests
-import tarfile
 import os
 from os.path import join
 
-local_filename = "/tmp/cifar-10-python.tar.gz"
-with requests.get("https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz", stream=True) as r:
-    r.raise_for_status()
-    with open(local_filename, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=8192): 
-            f.write(chunk)
-
-file = tarfile.open(local_filename)
-file.extractall(join('/tmp', 'data'))
-
 os.makedirs('data', exist_ok=True)
-for root, dirs, files in os.walk(join('/tmp', 'data', 'cifar-10-batches-py')):
+for root, dirs, files in os.walk(join('/dbfs', 'mnt', 'databricks-dhdev-db-research', 'cifar-10-batches-py')):
     for filename in files:
         linkpath = join('data', filename)
         if os.access(linkpath, os.R_OK):
             os.remove(linkpath)
-        os.symlink(join('/tmp', 'data', 'cifar-10-batches-py', filename), linkpath)
+        os.symlink(join('/dbfs', 'mnt', 'databricks-dhdev-db-research', 'cifar-10-batches-py', filename), linkpath)
 print("Done!")
 
 # COMMAND ----------
 
 # MAGIC %pip install tensorflow
-
-# COMMAND ----------
-
-# MAGIC %fs ls file:/tmp/data/cifar-10-batches-py
 
 # COMMAND ----------
 
